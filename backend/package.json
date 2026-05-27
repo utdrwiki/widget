@@ -1,0 +1,28 @@
+{
+	"name": "@utdrwiki/widget-backend",
+	"version": "1.0.0",
+	"main": "index.js",
+	"repository": "https://github.com/utdrwiki/widget.git",
+	"author": {
+		"email": "git@kocka.tech",
+		"name": "Luka Simić",
+		"url": "https://kocka.tech"
+	},
+	"license": "GPL-3.0-only",
+	"scripts": {
+		"start": "node dist/src/server.js",
+		"build": "npm install && rm -rf dist && tsc"
+	},
+	"dependencies": {
+		"discord.js": "14.26.4",
+		"node-html-parser": "7.1.0",
+		"socket.io": "4.8.3",
+		"tough-cookie": "6.0.1"
+	},
+	"devDependencies": {
+		"@types/jsonwebtoken": "9.0.10",
+		"@types/node": "25.9.1",
+		"@types/react-notification-system": "0.2.39",
+		"typescript": "6.0.3"
+	}
+}

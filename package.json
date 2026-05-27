@@ -1,0 +1,21 @@
+{
+	"name": "@utdrwiki/widget",
+	"description": "Widget for providing feedback over Discord on Undertale/Deltarune Wiki articles",
+	"author": {
+		"email": "git@kocka.tech",
+		"name": "Luka Simić",
+		"url": "https://kocka.tech"
+	},
+	"repository": {
+		"url": "https://github.com/utdrwiki/widget.git",
+		"type": "git"
+	},
+	"license": "GPL-3.0-only",
+	"private": true,
+	"scripts": {
+		"build-front": "cd frontend && npm run build",
+		"build-back": "cd backend && npm run build",
+		"build": "npm run build-front && npm run build-back",
+		"start": "cd backend && npm start"
+	}
+}
