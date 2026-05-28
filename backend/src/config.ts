@@ -7,6 +7,7 @@ export default JSON.parse(readFileSync(process.cwd() + '/config.json', 'utf8')) 
 	webhook: string,
 	port: number
 	unixSocket?: string,
+	modRole: string,
 	wikis: Record<string, {
 		baseUrl: string;
 		scriptPath: string;

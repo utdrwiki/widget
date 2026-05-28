@@ -5,6 +5,7 @@ import parseMessage from './parse';
 import crypto from 'crypto';
 import { BaseGuildTextChannel, WebhookClient } from 'discord.js';
 import { getUserFeedback, getUserInfo, LastEditInfo } from './mediawiki';
+import { addUser, addUserMessage, isIpBanned, removeSocket } from './users';
 
 const randomAvatar = (username: string) => `https://www.gravatar.com/avatar/${
 	encodeURIComponent(
@@ -42,8 +43,16 @@ class SocketController {
 				}
 			});
 		}
-		this.ip = forwardedFor;
+		this.ip = forwardedFor.split(',', 1).join(',').trim();
 		this.wiki = wikiHeader;
+		if (isIpBanned(this.ip)) {
+			console.info('Banned user attempted to connect', {
+				ip: this.ip,
+				wiki: this.wiki
+			});
+			removeSocket(this);
+			return;
+		}
 		const cookieHeader = socket.handshake.headers['cookie'];
 		console.info('User connected', {
 			ip: this.ip,
@@ -66,6 +75,7 @@ class SocketController {
 			this.userId = userInfo.id;
 			this.name = userInfo.name;
 			this.avatar = randomAvatar(userInfo.name);
+			addUser(this, this.name, this.ip);
 			await Promise.allSettled([
 				this.startUserSession(),
 				this.relayUserFeedback(userInfo.changed)
@@ -87,18 +97,32 @@ class SocketController {
 	}
 
 	private async startUserSession() {
-		const messages = (await Promise.all(Array
-			.from(this.channel.messages.cache.values())
-			.sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-			.slice(-100)
-			.map(message => parseMessage(message))));
-		this.socket.on('sendMessage', this.handleMessage.bind(this));
-		this.socket.on('typing', this.handleTyping.bind(this));
-		this.socket.emit('signIn', {
-			channel: this.channel,
-			messages,
-			name: this.name
-		});
+		try {
+			const messages = (await Promise.all(Array
+				.from(this.channel.messages.cache.values())
+				.sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+				.slice(-100)
+				.map(message => parseMessage(message))));
+			this.socket.on('sendMessage', this.handleMessage.bind(this));
+			this.socket.on('typing', this.handleTyping.bind(this));
+			this.socket.emit('signIn', {
+				channel: this.channel,
+				messages,
+				name: this.name
+			});
+		} catch (error) {
+			console.error('Failed to start user session', {
+				error,
+				ip: this.ip,
+				wiki: this.wiki
+			});
+			this.notify({
+				level: 'error',
+				title: 'Failed to load messages',
+				message: 'An error occurred while loading messages. Please try again.'
+			});
+			this.socket.disconnect(true);
+		}
 	}
 
 	private async relayUserFeedback(changed?: LastEditInfo) {
@@ -161,15 +185,26 @@ class SocketController {
 			userId: this.userId,
 			reason
 		});
+		removeSocket(this, this.name);
 	}
 
 	private async sendWebhook(content: string): Promise<void> {
-		await this.webhook.send({
+		if (!this.name) {
+			return;
+		}
+		const message = await this.webhook.send({
 			allowedMentions: { parse: [] },
 			content: content.slice(0, 2000),
-			username: this.name?.slice(0, 80),
+			username: this.name.slice(0, 80),
 			avatarURL: this.avatar
 		});
+		addUserMessage(this.name, message.id);
+	}
+
+	public disconnect() {
+		if (this.socket.connected) {
+			this.socket.disconnect(true);
+		}
 	}
 }
 
