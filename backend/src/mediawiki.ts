@@ -121,14 +121,28 @@ export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUs
 
 export async function getUserFeedback(editInfo: LastEditInfo, wiki: string): Promise<UserFeedback> {
 	const [apiUrl, apiOptions] = getWikiApiUrl(wiki);
-	apiUrl.search = new URLSearchParams({
-		action: 'compare',
-		fromrev: editInfo.fromrev.toString(),
-		torev: editInfo.torev.toString(),
-		prop: 'title|diff',
-		format: 'json',
-		formatversion: '2'
-	}).toString();
+	const isNewPage = editInfo.fromrev === 0;
+	if (isNewPage) {
+		// New page, no diff available. Use the revision content as feedback.
+		apiUrl.search = new URLSearchParams({
+			action: 'query',
+			revids: editInfo.torev.toString(),
+			prop: 'revisions',
+			rvprop: 'content',
+			rvslots: 'main',
+			format: 'json',
+			formatversion: '2'
+		}).toString();
+	} else {
+		apiUrl.search = new URLSearchParams({
+			action: 'compare',
+			fromrev: editInfo.fromrev.toString(),
+			torev: editInfo.torev.toString(),
+			prop: 'title|diff',
+			format: 'json',
+			formatversion: '2'
+		}).toString();
+	}
 	const apiRequest = await fetch(apiUrl, apiOptions);
 	if (!apiRequest.ok) {
 		throw new Error('Failed to fetch edit info from wiki API', {
@@ -136,19 +150,37 @@ export async function getUserFeedback(editInfo: LastEditInfo, wiki: string): Pro
 		});
 	}
 	const apiResponse: any = await apiRequest.json();
-	const { compare: { totitle, body } } = apiResponse;
-	const wikiConfig = getWikiConfig(wiki);
-	return {
-		title: totitle.split(':').slice(1).join(':'),
-		articleUrl: `${wikiConfig.baseUrl}${wikiConfig.articlePath.replace(
-			'$1',
-			encodeURIComponent(totitle)
-		)}`,
-		diffUrl: `${wikiConfig.baseUrl}${wikiConfig.scriptPath}/?diff=${editInfo.torev}&ref=articlefeedback`,
-		content: parse(`<table>${body}</table>`)
+	if (apiResponse.error) {
+		throw new Error('API error while fetching edit info', {
+			cause: apiResponse.error
+		});
+	}
+	let talkTitle: string;
+	let wikitext: string;
+	if (isNewPage) {
+		const { query: { pages: [{
+			title,
+			revisions: [{ slots: { main: {content} } }] }]}
+		} = apiResponse;
+		talkTitle = title;
+		wikitext = content.split('\n').slice(3, -1).join('\n');
+	} else {
+		const { compare: { totitle, body } } = apiResponse;
+		talkTitle = totitle;
+		wikitext = parse(`<table>${body}</table>`)
 			.querySelectorAll('.diff-addedline')
 			.slice(4, -1)
 			.map(line => line.textContent.trim())
-			.join('\n')
+			.join('\n');
+	}
+	const wikiConfig = getWikiConfig(wiki);
+	return {
+		title: talkTitle.split(':').slice(1).join(':'),
+		articleUrl: `${wikiConfig.baseUrl}${wikiConfig.articlePath.replace(
+			'$1',
+			encodeURIComponent(talkTitle)
+		)}`,
+		diffUrl: `${wikiConfig.baseUrl}${wikiConfig.scriptPath}/?diff=${editInfo.torev}&ref=articlefeedback`,
+		content: wikitext
 	};
 }

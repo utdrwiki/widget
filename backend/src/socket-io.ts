@@ -14,6 +14,8 @@ const randomAvatar = (username: string) => `https://www.gravatar.com/avatar/${
 			.digest('hex')
 	)}?s=400&d=identicon`;
 
+const acknowledgedFeedback = new Set<number>();
+
 class SocketController {
 	private socket: io.Socket
 	private channel: BaseGuildTextChannel
@@ -107,12 +109,13 @@ class SocketController {
 			})
 			return;
 		}
+		if (acknowledgedFeedback.has(changed.torev)) {
+			return;
+		}
+		acknowledgedFeedback.add(changed.torev);
 		try {
 			const feedback = await getUserFeedback(changed, this.wiki);
-			await this.sendWebhook(`Feedback on [${feedback.title}](<${feedback.articleUrl}>) ([diff](<${feedback.diffUrl}>)):\n${feedback.content
-				.split('\n')
-				.map(line => `> ${line}`)
-				.join('\n')}`);
+			await this.sendWebhook(`Feedback on [${feedback.title}](<${feedback.articleUrl}>) ([diff](<${feedback.diffUrl}>)):\n>>> ${feedback.content}`);
 		} catch (error) {
 			console.error('Failed to send feedback:', error);
 			this.notify({
