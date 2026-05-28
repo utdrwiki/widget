@@ -97,24 +97,24 @@ export default async function(message: DiscordMessage): Promise<Message> {
 			avatar: message.author.displayAvatarURL({ size: 64 }),
 			id: message.author.id,
 			color: member?.displayHexColor ?? '#000000',
-			roles: member?.roles.cache.map(role => ({
-				name: role.name,
-				color: role.hexColor,
-				position: role.rawPosition
-			})) ?? []
+			roles: Array.from(member?.roles.cache.values() ?? [])
+				.map(role => ({
+					name: role.name,
+					color: role.hexColor,
+					position: role.rawPosition
+				})) ?? []
 		},
 		timestamp: message.createdTimestamp,
 		content: message.content || null,
 		embeds: message.embeds.map(embed => new Embed(embed)) || [],
 		editedAt: message.editedTimestamp === 0 ? null : message.editedTimestamp,
 		type: message.type,
-		reactions: Array.from(message.reactions.cache
-			.values()
+		reactions: Array.from(message.reactions.cache.values())
 			.map(reaction => ({
 				name: reaction.emoji.name ?? '',
 				id: reaction.emoji.id ?? '',
 				count: reaction.count
-			}))),
+			})),
 		attachment: message.attachments.mapValues(attachment => ({
 			width: attachment.width ?? 0,
 			height: attachment.height ?? 0,
@@ -132,11 +132,12 @@ export default async function(message: DiscordMessage): Promise<Message> {
 						return {
 							name: member.displayName,
 							id: member.id,
-							roles: member.roles.cache.map(role => ({
-								name: role.name,
-								color: role.hexColor,
-								position: role.rawPosition
-							})),
+							roles: Array.from(member.roles.cache.values())
+								.map(role => ({
+									name: role.name,
+									color: role.hexColor,
+									position: role.rawPosition
+								})),
 							avatar: member.user.displayAvatarURL({ size: 128 })
 						}
 					} else {
@@ -149,12 +150,13 @@ export default async function(message: DiscordMessage): Promise<Message> {
 					}
 				})
 			),
-			roles: Array.from(message.mentions.roles.values().map(role => ({
-				name: role.name,
-				color: role.hexColor,
-				position: role.position,
-				id: role.id
-			}))),
+			roles: Array.from(message.mentions.roles.values())
+				.map(role => ({
+					name: role.name,
+					color: role.hexColor,
+					position: role.position,
+					id: role.id
+				})),
 			everyone: message.mentions.everyone
 		}
 	}

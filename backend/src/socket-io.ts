@@ -85,17 +85,18 @@ class SocketController {
 	}
 
 	private async startUserSession() {
-		const messages = (await Promise.all((await this.channel.messages.fetch({ limit: 100 }))
-			.values()
-			.map(message => parseMessage(message))))
-			.sort((a, b) => a.timestamp - b.timestamp);
+		const messages = (await Promise.all(Array
+			.from(this.channel.messages.cache.values())
+			.sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+			.slice(-100)
+			.map(message => parseMessage(message))));
+		this.socket.on('sendMessage', this.handleMessage.bind(this));
+		this.socket.on('typing', this.handleTyping.bind(this));
 		this.socket.emit('signIn', {
 			channel: this.channel,
 			messages,
 			name: this.name
 		});
-		this.socket.on('sendMessage', this.handleMessage.bind(this));
-		this.socket.on('typing', this.handleTyping.bind(this));
 	}
 
 	private async relayUserFeedback(changed?: LastEditInfo) {

@@ -34,6 +34,7 @@ export async function main() {
 	if (!channel.isTextBased()) {
 		throw new Error(`Channel ${config.channel} in server ${config.server} is not text based`);
 	}
+	await channel.messages.fetch({ limit: 100 })
 	const webhook = new WebhookClient({
 		url: config.webhook
 	})
