@@ -30,33 +30,30 @@ function getWikiConfig(wiki: string) {
 	return wikiConfig;
 }
 
+const localhostDispatcher = new Agent({
+	connect: {
+		lookup: (_, __, callback) => {
+			return callback(null, '::1', 6);
+		}
+	}
+});
+
 function getWikiApiUrl(wiki: string): [URL, RequestInit] {
 	const wikiConfig = getWikiConfig(wiki);
 	const apiUrl = new URL(`${wikiConfig.baseUrl}${wikiConfig.scriptPath}/api.php`);
-	const userAgent = 'utdrwiki/widget';
+	const headers = {
+		...(wikiConfig.authorization ?
+			{ Authorization: wikiConfig.authorization } :
+			{}),
+		'User-Agent': 'utdrwiki/widget',
+	};
 	if (wikiConfig.isLocal) {
-		const wikiHost = apiUrl.host;
-		apiUrl.host = 'localhost';
 		return [apiUrl, {
-			dispatcher: new Agent({
-				connect: {
-					rejectUnauthorized: false
-				}
-			}),
-			headers: {
-				...(wikiConfig.authorization ?
-					{ Authorization: wikiConfig.authorization } :
-					{}),
-				Host: wikiHost,
-				'User-Agent': userAgent,
-			}
+			dispatcher: localhostDispatcher,
+			headers,
 		}];
 	}
-	return [apiUrl, {
-		headers: {
-			'User-Agent': userAgent
-		}
-	}];
+	return [apiUrl, {headers}];
 }
 
 export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUserInfo> {
@@ -67,16 +64,17 @@ export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUs
 		format: 'json',
 		formatversion: '2',
 		// Current user information
+		assert: 'user',
 		meta: 'userinfo',
 		uiprop: 'blockinfo|groups',
 		// Last 1 minute of article feedback changes
 		list: 'recentchanges',
-		rcstart: oneMinuteAgo.toISOString(),
+		rcend: oneMinuteAgo.toISOString(),
 		rcnamespace: '1',
 		rctag: 'articlefeedback',
-		rcprop: 'ids',
+		rcprop: 'ids|user',
 		rclimit: '10',
-		rctype: 'edit',
+		rctype: 'edit|new',
 		rcslot: 'main',
 	}).toString();
 	const apiRequest = await fetch(apiUrl, {
@@ -91,6 +89,11 @@ export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUs
 	}
 	const apiResponse: any = await apiRequest.json();
 	console.debug('Wiki API response:', apiResponse);
+	if (apiResponse.error) {
+		throw new Error('API error while fetching user info', {
+			cause: apiResponse.error
+		});
+	}
 	const {
 		query: {
 			userinfo: { id, name, blockid, groups },
@@ -103,11 +106,6 @@ export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUs
 		blocked: Boolean(blockid),
 		isTemp: groups.includes('temp')
 	};
-	if (!id) {
-		throw new Error('User is not logged in', {
-			cause: apiResponse
-		});
-	}
 	const recentChange = recentchanges.find((c: any) => c.user === name);
 	if (recentChange) {
 		return {
@@ -133,22 +131,24 @@ export async function getUserFeedback(editInfo: LastEditInfo, wiki: string): Pro
 	}).toString();
 	const apiRequest = await fetch(apiUrl, apiOptions);
 	if (!apiRequest.ok) {
-		throw new Error(`Failed to fetch edit info from wiki API: ${apiRequest.status} ${apiRequest.statusText}`);
+		throw new Error('Failed to fetch edit info from wiki API', {
+			cause: apiRequest
+		});
 	}
 	const apiResponse: any = await apiRequest.json();
-	const { compare: { title, body } } = apiResponse;
+	const { compare: { totitle, body } } = apiResponse;
 	const wikiConfig = getWikiConfig(wiki);
 	return {
-		title: title.split(':').slice(1).join(':'),
+		title: totitle.split(':').slice(1).join(':'),
 		articleUrl: `${wikiConfig.baseUrl}${wikiConfig.articlePath.replace(
 			'$1',
-			encodeURIComponent(title)
+			encodeURIComponent(totitle)
 		)}`,
 		diffUrl: `${wikiConfig.baseUrl}${wikiConfig.scriptPath}/?diff=${editInfo.torev}&ref=articlefeedback`,
 		content: parse(`<table>${body}</table>`)
 			.querySelectorAll('.diff-addedline')
 			.slice(4, -1)
-			.map(line => line.textContent)
+			.map(line => line.textContent.trim())
 			.join('\n')
 	};
 }

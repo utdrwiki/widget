@@ -107,8 +107,8 @@ class SocketController {
 			})
 			return;
 		}
-		const feedback = await getUserFeedback(changed, this.wiki);
 		try {
+			const feedback = await getUserFeedback(changed, this.wiki);
 			await this.sendWebhook(`Feedback on [${feedback.title}](<${feedback.articleUrl}>) ([diff](<${feedback.diffUrl}>)):\n${feedback.content
 				.split('\n')
 				.map(line => `> ${line}`)
