@@ -103,6 +103,11 @@ export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUs
 		blocked: Boolean(blockid),
 		isTemp: groups.includes('temp')
 	};
+	if (!id) {
+		throw new Error('User is not logged in', {
+			cause: apiResponse
+		});
+	}
 	const recentChange = recentchanges.find((c: any) => c.user === name);
 	if (recentChange) {
 		return {

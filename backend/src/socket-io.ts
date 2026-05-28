@@ -69,15 +69,15 @@ class SocketController {
 				this.relayUserFeedback(userInfo.changed)
 			]);
 		} catch (error) {
-			console.error(error);
+			console.error('Failed to fetch user info', {
+				error,
+				ip: this.ip,
+				wiki: this.wiki
+			});
 			this.notify({
 				level: 'error',
 				title: 'No active wiki session',
 				message: 'You do not seem to have any active wiki session. If you had just left article feedback, this is a bug. Sorry!'
-			});
-			console.error('User tried to connect without a cookie', {
-				ip: this.ip,
-				wiki: this.wiki
 			});
 			this.socket.disconnect(true);
 			return;
