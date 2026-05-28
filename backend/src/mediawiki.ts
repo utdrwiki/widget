@@ -44,8 +44,11 @@ function getWikiApiUrl(wiki: string): [URL, RequestInit] {
 				}
 			}),
 			headers: {
+				...(wikiConfig.authorization ?
+					{ Authorization: wikiConfig.authorization } :
+					{}),
 				Host: wikiHost,
-				'User-Agent': userAgent
+				'User-Agent': userAgent,
 			}
 		}];
 	}
@@ -83,10 +86,10 @@ export async function getUserInfo(cookies: string, wiki: string): Promise<WikiUs
 			Cookie: cookies
 		}
 	});
-	const apiResponse: any = await apiRequest.json();
 	if (!apiRequest.ok) {
 		throw new Error(`Failed to fetch user info from wiki API: ${apiRequest.status} ${apiRequest.statusText}`);
 	}
+	const apiResponse: any = await apiRequest.json();
 	console.debug('Wiki API response:', apiResponse);
 	const {
 		query: {

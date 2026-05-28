@@ -12,6 +12,7 @@ export default JSON.parse(readFileSync(process.cwd() + '/config.json', 'utf8')) 
 		scriptPath: string;
 		articlePath: string;
 		isLocal?: boolean;
+		authorization?: string;
 		discourse?: string;
 	}>
 }
