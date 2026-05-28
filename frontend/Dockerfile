@@ -6,7 +6,7 @@ COPY . .
 RUN npm run build
 
 FROM nginx:stable-alpine
-COPY --from=builder /srv/widget/frontend/dist /srv/widget/frontend/build
+COPY --from=builder /srv/widget/frontend/dist /srv/widget/frontend/dist
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
