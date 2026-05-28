@@ -3,7 +3,6 @@ import Moment from 'moment'
 import * as React from 'react'
 
 import { Author } from '../../../../types/message'
-import parseUsername from '../parseUsername'
 import { Name, Root, Tag, Time } from './elements'
 
 interface Props {
@@ -17,7 +16,8 @@ export const Timestamp = ({ time }: { time: number }) => (
 
 export default connect<Props>()
   .with(({ state, signals, props }) => ({
-    toggle: signals.modal
+    toggle: signals.modal,
+    me: state.user.name,
   }))
   .toClass(
     props =>
@@ -26,16 +26,19 @@ export default connect<Props>()
           const { author } = this.props
 
           return (
-            <React.Fragment>
+            <>
               {author.type === 'bot' && <Tag className="bot">Bot</Tag>}
-              {author.type === 'guest' && <Tag className="guest">Guest</Tag>}
-            </React.Fragment>
+              {author.type === 'guest' && author.name === this.props.me ?
+                <>You</> :
+                <Tag className="guest">Guest</Tag>
+              }
+            </>
           )
         }
 
         render() {
           const { author, time } = this.props
-          const { name } = parseUsername(author.name)
+          const name = author.name === this.props.me ? 'You' : author.name;
 
           return (
             <Root className="author">

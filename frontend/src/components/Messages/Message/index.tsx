@@ -2,10 +2,8 @@ import { ThemeProvider } from 'emotion-theming'
 import { parseText } from '../../Markdown/render'
 import * as React from 'react'
 import message from '../../../types/message'
-import MessageType from '../../../types/messagetype'
 import Author, { Timestamp } from './Author'
 import { Avatar, Content, Group, JoinMember, JoinText, Messages, Reactions, Root, Sys } from './elements'
-import parseUsername from './parseUsername'
 import Reaction from './Reaction'
 import Reply from './Reply'
 
@@ -24,21 +22,6 @@ class Message extends React.PureComponent<Props, any> {
   render() {
     const { messages, lastSeen, all } = this.props
     const [message] = messages
-
-    if (message.type == MessageType.UserJoin) {
-      const { name } = parseUsername(message.author.name)
-
-      return (
-        <Group className="message join">
-          <Messages className="content">
-            <JoinText>
-              Hey! Listen! <JoinMember>{name}</JoinMember> has joined!
-            </JoinText>
-            <Timestamp time={message.timestamp} />
-          </Messages>
-        </Group>
-      )
-    }
 
     return (
       <div>
