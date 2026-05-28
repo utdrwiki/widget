@@ -2,6 +2,7 @@ import * as React from 'react'
 import N from 'react-notification-system'
 
 import { Notifications } from './elements'
+import config from '../modules/config'
 
 const initial: N.Notification[] = []
 let ref: ((notification: N.Notification) => void) | null = null
@@ -15,7 +16,13 @@ export const addNotification = (
     const notification = {
       ...n,
       message:
-        typeof n.message === 'string' ? n.message : JSON.stringify(n.message)
+        typeof n.message === 'string' ? n.message : JSON.stringify(n.message),
+      action: {
+        label: 'Join the server',
+        callback() {
+          window.open(config.invite);
+        }
+      }
     }
 
     if (ref) return ref(notification)
