@@ -80,8 +80,8 @@ export function signIn({ state, props }: Context<SignInData>) {
   state.loading = false
   addNotification({
     level: 'success',
-    title: 'Welcome!',
-    message: 'You are viewing the Discord channel where wiki users discuss your feedback. You can join the server if you want to participate from the other side!',
+    title: 'Thank you for your feedback!',
+    message: 'You are now viewing the Discord channel where wiki users discuss your feedback. You can join the server if you want to participate from the other side!',
     autoDismiss: 30
   });
 }
