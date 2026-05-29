@@ -1,4 +1,4 @@
-import { Message as DiscordMessage, Guild, GuildMember } from 'discord.js'
+import { Message as DiscordMessage, GuildMember, User } from 'discord.js'
 import Embed from './embed'
 import { PermissionsBitField } from 'discord.js'
 
@@ -69,12 +69,15 @@ interface Message {
 	}
 }
 
-async function getMember(guild: Guild, id: string): Promise<GuildMember | null> {
-	if (guild.members.cache.has(id)) {
-		return guild.members.cache.get(id)!;
+async function getMember(message: DiscordMessage<true>, user: User): Promise<GuildMember | null> {
+	if (message.webhookId) {
+		return null;
+	}
+	if (message.guild.members.cache.has(user.id)) {
+		return message.guild.members.cache.get(user.id)!;
 	}
 	try {
-		return await guild.members.fetch(id);
+		return await message.guild.members.fetch(user.id);
 	} catch {
 		return null;
 	}
@@ -84,7 +87,7 @@ export default async function(message: DiscordMessage): Promise<Message> {
 	if (!message.inGuild()) {
 		throw new Error('Message does not have a guild, cannot parse')
 	}
-	const member = message.member ?? await getMember(message.guild, message.author.id);
+	const member = message.member ?? await getMember(message, message.author);
 	return {
 		id: message.id,
 		reference: message.reference?.messageId,
@@ -124,7 +127,7 @@ export default async function(message: DiscordMessage): Promise<Message> {
 			})),
 			members: await Promise.all(
 				[...message.mentions.users.values()].map(async user => {
-					const member = await getMember(message.guild, user.id);
+					const member = await getMember(message, user);
 					if (member) {
 						return {
 							name: member.displayName,
