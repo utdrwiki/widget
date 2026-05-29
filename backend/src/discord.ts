@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, BaseGuildTextChannel, Client, Events, GatewayIntentBits, Interaction, WebhookClient } from "discord.js";
+import { ApplicationCommandOptionType, BaseGuildTextChannel, Client, Events, GatewayIntentBits, Interaction, MessageFlags, WebhookClient } from "discord.js";
 import config from "./config";
 import { banUser } from "./users";
 
@@ -31,7 +31,7 @@ async function handleInteraction(interaction: Interaction) {
 			if ('reply' in interaction) {
 				await interaction.reply({
 					content: 'You do not have permission to use this command.',
-					ephemeral: true
+					flags: MessageFlags.Ephemeral
 				});
 			}
 			return;
@@ -42,13 +42,13 @@ async function handleInteraction(interaction: Interaction) {
 			messagesToDelete = banUser(userToBan!);
 			await interaction.reply({
 				content: 'Banned.',
-				ephemeral: true
+				flags: MessageFlags.Ephemeral
 			});
 		} else if (interaction.isButton()) {
 			messagesToDelete = banUser(interaction.customId);
 			await interaction.reply({
 				content: 'Banned.',
-				ephemeral: true
+				flags: MessageFlags.Ephemeral
 			});
 		}
 		if (messagesToDelete.length > 0) {
@@ -60,9 +60,10 @@ async function handleInteraction(interaction: Interaction) {
 }
 
 export async function setup(): Promise<[Client, WebhookClient, BaseGuildTextChannel]> {
-	await client.login(config.token)
-	await new Promise(resolve => client.once('clientReady', resolve))
+	await client.login(config.token);
+	await new Promise(resolve => client.once('clientReady', resolve));
 	const guild = await client.guilds.fetch(config.server);
+	await guild.members.fetch();
 	const channel = await guild.channels.fetch(config.channel);
 	if (!channel) {
 		throw new Error(`Could not find channel ${config.channel} in server ${config.server}`);

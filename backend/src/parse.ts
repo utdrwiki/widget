@@ -1,4 +1,4 @@
-import { Message as DiscordMessage } from 'discord.js'
+import { Message as DiscordMessage, Guild, GuildMember } from 'discord.js'
 import Embed from './embed'
 import { PermissionsBitField } from 'discord.js'
 
@@ -9,12 +9,6 @@ export interface Channel {
 	id: string
 	category: string
 	permissions: PermissionsBitField
-}
-
-export interface MessageReference {
-	channelId: string
-	guildId: string | undefined
-	messageId: string | undefined
 }
 
 export interface Reaction {
@@ -46,7 +40,7 @@ export interface Attachment {
 
 interface Message {
 	id: string
-	reference: MessageReference | null
+	reference?: string
 	author: Author
 	timestamp: number
 	content: string | null
@@ -75,22 +69,25 @@ interface Message {
 	}
 }
 
+async function getMember(guild: Guild, id: string): Promise<GuildMember | null> {
+	if (guild.members.cache.has(id)) {
+		return guild.members.cache.get(id)!;
+	}
+	try {
+		return await guild.members.fetch(id);
+	} catch {
+		return null;
+	}
+}
+
 export default async function(message: DiscordMessage): Promise<Message> {
 	if (!message.inGuild()) {
 		throw new Error('Message does not have a guild, cannot parse')
 	}
-	const member = message.member ?? await message.guild.members
-		.fetch(message.author.id)
-		.catch(() => null)
+	const member = message.member ?? await getMember(message.guild, message.author.id);
 	return {
 		id: message.id,
-		reference: message.reference
-			? {
-					channelId: message.reference.channelId,
-					guildId: message.reference.guildId,
-					messageId: message.reference.messageId
-				}
-			: null,
+		reference: message.reference?.messageId,
 		author: {
 			name: member?.displayName ?? message.author.globalName ?? message.author.tag,
 			type: message.webhookId ? 'guest' : message.author.bot ? 'bot' : 'member',
@@ -127,7 +124,7 @@ export default async function(message: DiscordMessage): Promise<Message> {
 			})),
 			members: await Promise.all(
 				[...message.mentions.users.values()].map(async user => {
-					const member = await message.guild.members.fetch(user.id).catch(() => null)
+					const member = await getMember(message.guild, user.id);
 					if (member) {
 						return {
 							name: member.displayName,

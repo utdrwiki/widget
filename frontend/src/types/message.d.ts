@@ -6,15 +6,9 @@ export interface Attachment {
   width: number | null
 }
 
-export interface MessageReference {
-  channelId: string
-  guildId: string | undefined
-  messageId: string | undefined
-}
-
 interface Message {
   id: string
-  reference: MessageReference | null
+  reference: string | undefined
   author: Author
   timestamp: number
   content: string | null

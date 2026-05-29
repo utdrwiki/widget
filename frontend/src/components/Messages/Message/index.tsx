@@ -25,7 +25,7 @@ class Message extends React.PureComponent<Props, any> {
 
     return (
       <div>
-        {message.reference && <Reply id={message.reference.messageId} messages={all} />}
+        {message.reference && <Reply id={message.reference} messages={all} />}
         <Group className="group">
           <Avatar url={message.author.avatar} className="avatar" />
           <Messages className="messages">
