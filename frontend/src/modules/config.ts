@@ -1,10 +1,26 @@
-import * as config from '../../config.json';
+const params = new URLSearchParams(location.search);
 
-export default config as {
-    theme: {
-        primary: string
-        accent: string
-        background: string
+function getColor(name: string, defaultValue: string): string {
+    const value = params.get(name);
+    if (value && /^[0-9A-Fa-f]+$/.test(value)) {
+        return `#${value}`;
     }
-    invite: string
+    return defaultValue;
 }
+
+function getInvite(): string | null {
+    const invite = params.get('invite');
+    if (invite && /^[\w-]+$/.test(invite)) {
+        return `https://discord.gg/${invite}`;
+    }
+    return null;
+}
+
+export default {
+    theme: {
+        primary: getColor('theme', '#fff'),
+        accent: getColor('accent', '#5865F2'),
+        background: getColor('background', '#36393E')
+    },
+    invite: getInvite()
+};

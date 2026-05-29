@@ -17,12 +17,15 @@ export const addNotification = (
       ...n,
       message:
         typeof n.message === 'string' ? n.message : JSON.stringify(n.message),
-      action: {
+    }
+    if (config.invite) {
+      const { invite } = config;
+      notification.action = {
         label: 'Join the server',
         callback() {
-          window.open(config.invite);
-        }
-      }
+          window.open(invite, '_blank');
+        },
+      };
     }
 
     if (ref) return ref(notification)

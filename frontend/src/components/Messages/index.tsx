@@ -54,9 +54,9 @@ export default connect()
                 <Name>{channel.name}</Name>
                 {channel.topic && <Topic>{channel.topic}</Topic>}
               </Stretch>
-              <Join href={config.invite} target="_blank">
+              {config.invite && <Join href={config.invite} target="_blank">
                 Join
-              </Join>
+              </Join>}
             </Header>
           )
           const content = this.getContent()
