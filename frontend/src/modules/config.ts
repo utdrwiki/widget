@@ -18,7 +18,7 @@ function getInvite(): string | null {
 
 export default {
     theme: {
-        primary: getColor('theme', '#fff'),
+        primary: getColor('primary', '#fff'),
         accent: getColor('accent', '#5865F2'),
         background: getColor('background', '#36393E')
     },
