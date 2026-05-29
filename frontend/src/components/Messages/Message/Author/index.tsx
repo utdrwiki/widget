@@ -25,15 +25,17 @@ export default connect<Props>()
         tags() {
           const { author } = this.props
 
-          return (
-            <>
-              {author.type === 'bot' && <Tag className="bot">Bot</Tag>}
-              {author.type === 'guest' && author.name === this.props.me ?
-                <>You</> :
-                <Tag className="guest">Guest</Tag>
-              }
-            </>
-          )
+          if (author.type === 'bot') {
+            return <Tag className="bot">Bot</Tag>
+          }
+          if (author.type === 'guest') {
+            if (author.name === this.props.me) {
+              return <Tag className="you">You</Tag>
+            } else {
+              return <Tag className="guest">Guest</Tag>
+            }
+          }
+          return <></>;
         }
 
         render() {
