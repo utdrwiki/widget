@@ -143,7 +143,7 @@ class SocketController {
 				'' :
 				` ([diff](<${feedback.diffUrl}>))`;
 			await this.sendWebhook(
-				`Feedback on [${feedback.title}](<${feedback.articleUrl}>)${diffLink}:\n\n>>> ${feedback.content}`,
+				`Feedback on [${feedback.title}](<${feedback.articleUrl}>)${diffLink} **[user is currently viewing the channel anonymously]**:\n\n>>> ${feedback.content}`,
 				[{
 					type: ComponentType.ActionRow,
 					components: [
