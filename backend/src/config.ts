@@ -1,13 +1,14 @@
 import { readFileSync } from 'fs'
 
 export default JSON.parse(readFileSync(process.cwd() + '/config.json', 'utf8')) as {
-	token: string
-	server: string
-	channel: string
-	webhook: string,
-	port: number
-	unixSocket?: string,
-	modRole: string,
+	token: string;
+	server: string;
+	channel: string;
+	webhook: string;
+	port: number;
+	unixSocket?: string;
+	modRole: string;
+	autobanRegex?: string;
 	wikis: Record<string, {
 		baseUrl: string;
 		scriptPath: string;

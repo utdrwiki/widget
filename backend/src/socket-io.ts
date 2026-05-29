@@ -5,7 +5,7 @@ import parseMessage from './parse';
 import crypto from 'crypto';
 import { APIMessageTopLevelComponent, BaseGuildTextChannel, ButtonStyle, ComponentType, WebhookClient } from 'discord.js';
 import { getUserFeedback, getUserInfo, LastEditInfo } from './mediawiki';
-import { addUser, addUserMessage, isIpBanned, removeSocket } from './users';
+import { addUser, addUserMessage, banUser, isIpBanned, removeSocket } from './users';
 
 const randomAvatar = (username: string) => `https://www.gravatar.com/avatar/${
 	encodeURIComponent(
@@ -183,15 +183,41 @@ class SocketController {
 			});
 			return;
 		}
+		const message = data.message
+			.trim()
+			.replace(/(https?:\/\/\S+)/gu, '<$1>')
+			.replace(
+				/discord(\.gg|app\.com\/invite|\.com\/invite)\//g,
+				`discord${String.fromCharCode(8302)}$1/`
+			);
+		if (!message) {
+			return;
+		}
+		if (config.autobanRegex && new RegExp(config.autobanRegex, 'iu').test(message)) {
+			console.info('Autobanning user for message', {
+				ip: this.ip,
+				userId: this.userId,
+				message
+			});
+			const messages = banUser(this.name!);
+			for (const messageId of messages) {
+				try {
+					await this.webhook.deleteMessage(messageId);
+				} catch (error) {
+					console.error('Failed to delete message during autoban', error);
+				}
+			}
+			return;
+		}
 		try {
-			await this.sendWebhook(data.message);
+			await this.sendWebhook(message);
 		} catch (error) {
-			console.error('Failed to send message:', error)
+			console.error('Failed to send message:', error);
 			this.notify({
 				level: 'error',
 				title: 'Failed to send message',
 				message: 'An error occurred while sending your message! Please try again.'
-			})
+			});
 		}
 	}
 
