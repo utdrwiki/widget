@@ -139,8 +139,11 @@ class SocketController {
 		acknowledgedFeedback.add(changed.torev);
 		try {
 			const feedback = await getUserFeedback(changed, this.wiki);
+			const diffLink = changed.fromrev === 0 ?
+				'' :
+				` ([diff](<${feedback.diffUrl}>))`;
 			await this.sendWebhook(
-				`Feedback on [${feedback.title}](<${feedback.articleUrl}>) ([diff](<${feedback.diffUrl}>)):\n\n>>> ${feedback.content}`,
+				`Feedback on [${feedback.title}](<${feedback.articleUrl}>)${diffLink}:\n\n>>> ${feedback.content}`,
 				[{
 					type: ComponentType.ActionRow,
 					components: [
