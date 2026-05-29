@@ -3,7 +3,7 @@ import { Notification } from 'react-notification-system';
 import config from './config';
 import parseMessage from './parse';
 import crypto from 'crypto';
-import { BaseGuildTextChannel, WebhookClient } from 'discord.js';
+import { APIMessageTopLevelComponent, BaseGuildTextChannel, ButtonStyle, ComponentType, WebhookClient } from 'discord.js';
 import { getUserFeedback, getUserInfo, LastEditInfo } from './mediawiki';
 import { addUser, addUserMessage, isIpBanned, removeSocket } from './users';
 
@@ -130,7 +130,7 @@ class SocketController {
 			console.warn('User joined without any recent feedback', {
 				userId: this.userId,
 				ip: this.ip,
-			})
+			});
 			return;
 		}
 		if (acknowledgedFeedback.has(changed.torev)) {
@@ -139,7 +139,20 @@ class SocketController {
 		acknowledgedFeedback.add(changed.torev);
 		try {
 			const feedback = await getUserFeedback(changed, this.wiki);
-			await this.sendWebhook(`Feedback on [${feedback.title}](<${feedback.articleUrl}>) ([diff](<${feedback.diffUrl}>)):\n>>> ${feedback.content}`);
+			await this.sendWebhook(
+				`Feedback on [${feedback.title}](<${feedback.articleUrl}>) ([diff](<${feedback.diffUrl}>)):\n\n>>> ${feedback.content}`,
+				[{
+					type: ComponentType.ActionRow,
+					components: [
+						{
+							type: ComponentType.Button,
+							label: 'Ban',
+							custom_id: this.name!,
+							style: ButtonStyle.Danger
+						}
+					]
+				}]
+			);
 		} catch (error) {
 			console.error('Failed to send feedback:', error);
 			this.notify({
@@ -188,13 +201,15 @@ class SocketController {
 		removeSocket(this, this.name);
 	}
 
-	private async sendWebhook(content: string): Promise<void> {
+	private async sendWebhook(content: string, components: APIMessageTopLevelComponent[] = []): Promise<void> {
 		if (!this.name) {
 			return;
 		}
 		const message = await this.webhook.send({
 			allowedMentions: { parse: [] },
 			content: content.slice(0, 2000),
+			components,
+			withComponents: components.length > 0,
 			username: this.name.slice(0, 80),
 			avatarURL: this.avatar
 		});
