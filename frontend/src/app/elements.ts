@@ -9,7 +9,7 @@ export const Notifications = styled.div`
   }
 
   .notifications-br {
-    bottom: 0;
+    inset: 50px 0 auto auto !important;
   }
 
   .notification {
