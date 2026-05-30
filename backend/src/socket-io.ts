@@ -3,7 +3,13 @@ import { Notification } from 'react-notification-system';
 import config from './config';
 import parseMessage from './parse';
 import crypto from 'crypto';
-import { APIMessageTopLevelComponent, BaseGuildTextChannel, ButtonStyle, ComponentType, WebhookClient } from 'discord.js';
+import {
+	APIMessageTopLevelComponent,
+	BaseGuildTextChannel,
+	ButtonStyle,
+	ComponentType,
+	WebhookClient,
+} from 'discord.js';
 import { getUserFeedback, getUserInfo, LastEditInfo } from './mediawiki';
 import { addUser, addUserMessage, banUser, isIpBanned, removeSocket } from './users';
 
@@ -78,7 +84,7 @@ class SocketController {
 			addUser(this, this.name, this.ip);
 			await Promise.allSettled([
 				this.startUserSession(),
-				this.relayUserFeedback(userInfo.changed)
+				this.relayUserFeedback(userInfo.changed, userInfo.isTemp)
 			]);
 		} catch (error) {
 			console.error('Failed to fetch user info', {
@@ -125,7 +131,7 @@ class SocketController {
 		}
 	}
 
-	private async relayUserFeedback(changed?: LastEditInfo) {
+	private async relayUserFeedback(changed?: LastEditInfo, isTemp?: boolean) {
 		if (!changed) {
 			console.warn('User joined without any recent feedback', {
 				userId: this.userId,
@@ -142,8 +148,9 @@ class SocketController {
 			const diffLink = changed.fromrev === 0 ?
 				'' :
 				` ([diff](<${feedback.diffUrl}>))`;
+
 			await this.sendWebhook(
-				`Feedback on [${feedback.title}](<${feedback.articleUrl}>)${diffLink} **[user is currently viewing the channel anonymously]**:\n\n>>> ${feedback.content}`,
+				`Feedback on [${feedback.title}](<${feedback.articleUrl}>)${diffLink} **[user is currently viewing the channel${isTemp ? ' anonymously' : ''}]**:\n\n>>> ${feedback.content}`,
 				[{
 					type: ComponentType.ActionRow,
 					components: [
