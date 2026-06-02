@@ -32,6 +32,7 @@ class SocketController {
 	private userId?: number
 	private name?: string
 	private avatar?: string
+	private submittedFeedback = false;
 
 	constructor(socket: io.Socket, channel: BaseGuildTextChannel, webhook: WebhookClient) {
 		this.socket = socket
@@ -163,6 +164,13 @@ class SocketController {
 					]
 				}]
 			);
+			this.notify({
+				level: 'success',
+				title: 'Thank you for your feedback!',
+				message: 'You are now viewing the Discord channel where wiki users discuss your feedback. You can join the server if you want to participate from the other side!',
+				autoDismiss: 30
+			});
+			this.submittedFeedback = true;
 		} catch (error) {
 			console.error('Failed to send feedback:', error);
 			this.notify({
@@ -228,12 +236,19 @@ class SocketController {
 		}
 	}
 
-	private handleDisconnect(reason: io.DisconnectReason) {
+	private async handleDisconnect(reason: io.DisconnectReason) {
 		console.info('User disconnected', {
 			ip: this.ip,
 			userId: this.userId,
 			reason
 		});
+		if (this.submittedFeedback) {
+			try {
+				await this.sendWebhook('-# User stopped viewing the channel.');
+			} catch (error) {
+				console.error('Failed to send disconnect message', error);
+			}
+		}
 		removeSocket(this, this.name);
 	}
 

@@ -78,12 +78,6 @@ export function signIn({ state, props }: Context<SignInData>) {
   }
   state.messages = Dictionary(_.keyBy(messages, 'id'))
   state.loading = false
-  addNotification({
-    level: 'success',
-    title: 'Thank you for your feedback!',
-    message: 'You are now viewing the Discord channel where wiki users discuss your feedback. You can join the server if you want to participate from the other side!',
-    autoDismiss: 30
-  });
 }
 
 export function notify({ state, props }: Context<{ notification: Notification | Notification[] }>) {
