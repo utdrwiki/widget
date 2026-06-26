@@ -242,7 +242,7 @@ class SocketController {
 			userId: this.userId,
 			reason
 		});
-		if (this.submittedFeedback) {
+		if (this.submittedFeedback && reason !== 'server namespace disconnect') {
 			try {
 				await this.sendWebhook('-# User stopped viewing the channel.');
 			} catch (error) {
