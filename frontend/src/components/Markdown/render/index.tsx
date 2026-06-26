@@ -5,7 +5,7 @@ import * as React from 'react'
 import SimpleMarkdown from 'simple-markdown'
 import message from '../../../types/message'
 import Embed from '../../Messages/Message/Embed'
-import { Channel, Code, Edited, Emoji, Image, Link, Mention, Role, Timestamp, Twemoji } from './elements'
+import { Channel, Code, Edited, Emoji, Image, Link, Mention, Role, Spoiler, Timestamp, Twemoji } from './elements'
 
 // import Emoji from "./emoji"
 const $Emoji = { people: [{ names: ['disabled'], surrogates: '😀' }] }
@@ -416,6 +416,23 @@ const baseRules = {
     order: SimpleMarkdown.defaultRules.u.order,
     match: SimpleMarkdown.inlineRegex(/^~~([\s\S]+?)~~(?!_)/),
     parse: SimpleMarkdown.defaultRules.u.parse
+  },
+  spoiler: {
+    order: SimpleMarkdown.defaultRules.text.order - 1,
+    match: SimpleMarkdown.inlineRegex(/^\|\|([\s\S]+?)\|\|/),
+    parse: function(capture, parse, state) {
+      return {
+        content: parse(capture[1], state)
+      }
+    },
+    react: function(node, output, state) {
+      return createReactElement(
+        Spoiler,
+        {},
+        state.key,
+        output(node.content, state)
+      )
+    }
   },
   heading: {
     ...SimpleMarkdown.defaultRules.heading,
