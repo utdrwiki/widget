@@ -1,4 +1,4 @@
-import { Message as DiscordMessage, GuildMember, User } from 'discord.js'
+import { AttachmentFlags, Message as DiscordMessage, GuildMember, User } from 'discord.js'
 import Embed from './embed'
 import { PermissionsBitField } from 'discord.js'
 
@@ -115,11 +115,14 @@ export default async function(message: DiscordMessage): Promise<Message> {
 				id: reaction.emoji.id ?? '',
 				count: reaction.count
 			})),
-		attachment: message.attachments.mapValues(attachment => ({
-			width: attachment.width ?? 0,
-			height: attachment.height ?? 0,
-			url: attachment.url
-		})).first(),
+		attachment: message.attachments
+			.filter(attachment => !attachment.flags.has(AttachmentFlags.IsSpoiler))
+			.mapValues(attachment => ({
+				width: attachment.width ?? 0,
+				height: attachment.height ?? 0,
+				url: attachment.url
+			}))
+			.first(),
 		mentions: {
 			channels: message.mentions.channels.map(channel => ({
 				name: channel.isDMBased() ? 'unknown' : channel.name,
